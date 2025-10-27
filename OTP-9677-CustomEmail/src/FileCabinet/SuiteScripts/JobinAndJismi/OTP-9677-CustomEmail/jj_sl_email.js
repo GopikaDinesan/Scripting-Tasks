@@ -31,12 +31,12 @@ define(['N/ui/serverWidget', 'N/record', 'N/log'], function(serverWidget, record
       label: 'Message'
     }).isMandatory = true;
 
-    form.addField({
-      id: 'custpage_linked_customer',
-      type: serverWidget.FieldType.SELECT,
-      label: 'Linked Customer',
-      source: 'customer'
-    }).isMandatory = false;
+    // form.addField({
+    //   id: 'custpage_linked_customer',
+    //   type: serverWidget.FieldType.SELECT,
+    //   label: 'Linked Customer',
+    //   source: 'customer'
+    // }).isMandatory = false;
 
     form.addSubmitButton({ label: 'Submit Enquiry' });
     return form;
@@ -54,9 +54,9 @@ define(['N/ui/serverWidget', 'N/record', 'N/log'], function(serverWidget, record
       enquiry.setValue({ fieldId: 'custrecord_jj_subject', value: params.subject });
       enquiry.setValue({ fieldId: 'custrecord_jj_message', value: params.message });
 
-      if (params.linkedCustomer) {
-        enquiry.setValue({ fieldId: 'custrecord_linked_customer', value: params.linkedCustomer });
-      }
+      // if (params.linkedCustomer) {
+      //   enquiry.setValue({ fieldId: 'custrecord_linked_customer', value: params.linkedCustomer });
+      // }
 
       enquiry.save();
     } catch (error) {
