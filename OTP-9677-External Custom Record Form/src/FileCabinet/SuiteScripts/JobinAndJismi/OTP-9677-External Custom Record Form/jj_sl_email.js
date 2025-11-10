@@ -2,6 +2,7 @@
  * @NApiVersion 2.1
  * @NScriptType Suitelet
  */
+
 define(['N/ui/serverWidget', 'N/record', 'N/log'], function(serverWidget, record, log) {
  
   function buildForm() {
