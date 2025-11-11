@@ -5,7 +5,7 @@
  
 /************************************************************************************************
  *  
- * OTP-9660 : Search through the database to find the matching blood donors
+ * OTP-9687 : Search through the database to find the matching blood donors
  *
 *************************************************************************************************
  *
