@@ -5,13 +5,13 @@
  */
 /************************************************************************************************
  *  
- * TITLE: Online sales Order Creation Client Script (client side logic)
+ * TITLE: Online Sales Order Creation Client Script (client side logic)
  *
 *************************************************************************************************
  *
  * Author: Jobin and Jismi IT Services
  *
- * Date Created : 12-Noveber-2025
+ * Date Created : 12-November-2025
  *
  * Description : Suitelet to create Sales Orders.
  *                - Collects customer details.
@@ -31,8 +31,6 @@ define(['N/currentRecord', 'N/search', 'N/log'], (currentRecord, search, log) =>
    * Triggered when a field changes on the form.
    * Handles item selection, description sourcing, price sourcing, and amount calculation.
    * @param {Object} context - Field change context
-   * @param {string} context.sublistId - Sublist ID
-   * @param {string} context.fieldId - Field ID
    */
   function fieldChanged(context) {
     try {
@@ -95,9 +93,38 @@ define(['N/currentRecord', 'N/search', 'N/log'], (currentRecord, search, log) =>
   }
 
   /**
+   * Prevent committing a line without mandatory Quantity and Price.
+   * @param {Object} context - Line validation context
+   * @returns {boolean} true if line is valid, false otherwise
+   */
+  function validateLine(context) {
+    try {
+      if (context.sublistId === 'custpage_item_sublist') {
+        const rec = currentRecord.get();
+        const qty = Number(rec.getCurrentSublistValue({
+          sublistId: 'custpage_item_sublist',
+          fieldId: 'custcol_quantity'
+        })) || 0;
+
+        const rate = Number(rec.getCurrentSublistValue({
+          sublistId: 'custpage_item_sublist',
+          fieldId: 'custcol_rate'
+        })) || 0;
+
+        if (qty <= 0 || rate <= 0) {
+          alert('Quantity and Price are mandatory and must be greater than zero.');
+          return false;
+        }
+      }
+      return true;
+    } catch (e) {
+      safeLogError('validateLine Error', e);
+      return false;
+    }
+  }
+
+  /**
    * Safely logs errors to NetSuite execution log.
-   * @param {string} title - Log title
-   * @param {Error|string} err - Error details
    */
   function safeLogError(title, err) {
     try {
@@ -109,6 +136,7 @@ define(['N/currentRecord', 'N/search', 'N/log'], (currentRecord, search, log) =>
   }
 
   return {
-    fieldChanged
+    fieldChanged,
+    validateLine
   };
 });

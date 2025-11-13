@@ -2,7 +2,8 @@
  * @NApiVersion 2.1
  * @NScriptType Suitelet
  * @NModuleScope SameAccount
- *//************************************************************************************************
+ */
+/************************************************************************************************
  *  
  * TITLE : Online Sales Order Creation Suitelet
  *
@@ -18,18 +19,19 @@
  *                - Checks duplicate customers by email.
  *                - Creates Sales Order for existing or new customer.
  *                - Customers are always created as individuals (not companies).
- * REVISION HISTORY
+ *                - All SOs created in Pending Fulfillment.
+ *                - If SO total > 500 USD, Admin (-5) sends email to Sales Rep with PDF.
  *
- * @version 1.0 : 12-November-2025 : Initial build created by JJ0413
+ * REVISION HISTORY
+ * @version 2.0 : 13-November-2025 : Updated email logic to Admin → Sales Rep
  *
 *************************************************************************************************/
 
-define(['N/ui/serverWidget', 'N/search', 'N/record', 'N/log'],
-  (serverWidget, search, record, log) => {
+define(['N/ui/serverWidget', 'N/search', 'N/record', 'N/log', 'N/email', 'N/render'],
+  (serverWidget, search, record, log, email, render) => {
 
   /**
    * Entry point for Suitelet execution.
-   * Decides whether to render the form (GET) or process submission (POST).
    * @param {Object} context - Suitelet context object
    */
   function onRequest(context) {
@@ -100,6 +102,9 @@ define(['N/ui/serverWidget', 'N/search', 'N/record', 'N/log'],
       const customerId = getOrCreateCustomer({ firstName, lastName, emailAddr, phone });
       const soId = createSalesOrder({ customerId, lines });
 
+      // 🔥 Notify Sales Rep if total > 500 USD
+      maybeNotifySalesRep(soId);
+
       const successForm = serverWidget.createForm({ title: 'Sales Order Created' });
       successForm.addField({ id: 'custpage_success', type: serverWidget.FieldType.INLINEHTML, label: 'Success' })
         .defaultValue = `<p>Sales Order ${soId} created successfully.</p>`;
@@ -112,9 +117,8 @@ define(['N/ui/serverWidget', 'N/search', 'N/record', 'N/log'],
 
   /**
    * Parses item sublist lines from request.
-   * Ensures both Quantity and Price are entered.
    * @param {Object} request - Suitelet request object
-   * @returns {Array<Object>} Array of item lines with itemId, quantity, rate
+   * @returns {Array<Object>} Array of item lines
    */
   function parseItemLines(request) {
     const lines = [];
@@ -132,12 +136,6 @@ define(['N/ui/serverWidget', 'N/search', 'N/record', 'N/log'],
 
   /**
    * Finds or creates customer based on email.
-   * Always creates as an individual (not company).
-   * @param {Object} params - Customer details
-   * @param {string} params.firstName - Customer first name
-   * @param {string} params.lastName - Customer last name
-   * @param {string} params.emailAddr - Customer email
-   * @param {string} params.phone - Customer phone
    * @returns {number} Customer internal ID
    */
   function getOrCreateCustomer({ firstName, lastName, emailAddr, phone }) {
@@ -149,25 +147,17 @@ define(['N/ui/serverWidget', 'N/search', 'N/record', 'N/log'],
     if (existing && existing.length) return existing[0].getValue('internalid');
 
     const custRec = record.create({ type: record.Type.CUSTOMER, isDynamic: true });
-
-    // Subsidiary must be set first in OneWorld
     custRec.setValue({ fieldId: 'subsidiary', value: 11 }); // replace with your subsidiary ID
-
-    // Always individual
-    custRec.setValue({ fieldId: 'isperson', value: true });
+   
     custRec.setValue({ fieldId: 'firstname', value: firstName });
     custRec.setValue({ fieldId: 'lastname', value: lastName });
     custRec.setValue({ fieldId: 'email', value: emailAddr });
     custRec.setValue({ fieldId: 'phone', value: phone });
-
     return custRec.save();
   }
 
   /**
    * Creates Sales Order in Pending Fulfillment status.
-   * @param {Object} params - Customer ID and item lines
-   * @param {number} params.customerId - Customer internal ID
-   * @param {Array<Object>} params.lines - Array of item lines
    * @returns {number} Sales Order internal ID
    */
   function createSalesOrder({ customerId, lines }) {
@@ -184,10 +174,48 @@ define(['N/ui/serverWidget', 'N/search', 'N/record', 'N/log'],
         so.commitLine({ sublistId: 'item' });
       });
 
-            return so.save({ enableSourcing: true, ignoreMandatoryFields: false });
+      return so.save({ enableSourcing: true, ignoreMandatoryFields: false });
     } catch (e) {
       safeLogError('createSalesOrder Error', e);
       throw e;
+    }
+  }
+
+   /**
+   * If SO total > 500 USD, Admin (-5) sends email to Sales Rep with PDF.
+   * @param {number} soId - Sales Order internal ID
+   */
+  function maybeNotifySalesRep(soId) {
+    try {
+      const so = record.load({ type: record.Type.SALES_ORDER, id: soId });
+      const total = so.getValue({ fieldId: 'total' });
+      if (total <= 500) return;
+
+      const salesRep = so.getValue({ fieldId: 'salesrep' });
+      if (!salesRep) {
+        safeLogError('maybeNotifySalesRep Warning', 'No Sales Rep assigned to Sales Order ' + soId);
+        return;
+      }
+
+      let pdfFile = null;
+      try {
+        pdfFile = render.transaction({
+          entityId: soId,
+          printMode: render.PrintMode.PDF
+        });
+      } catch (pdfErr) {
+        safeLogError('PDF Render Error', pdfErr);
+      }
+
+      email.send({
+        author: -5, // Admin internal ID
+        recipients: salesRep, // Send to Sales Rep
+        subject: `Sales Order ${soId} exceeds 500 USD`,
+        body: `Sales Order ${soId} total is ${total} USD. Please review.`,
+        attachments: pdfFile ? [pdfFile] : []
+      });
+    } catch (e) {
+      safeLogError('maybeNotifySalesRep Error', e);
     }
   }
 
