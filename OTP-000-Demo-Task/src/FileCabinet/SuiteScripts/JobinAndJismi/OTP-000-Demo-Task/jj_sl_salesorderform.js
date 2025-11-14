@@ -23,7 +23,8 @@
  *                - If SO total > 500 USD, Admin (-5) sends email to Sales Rep with PDF.
  *
  * REVISION HISTORY
- * @version 2.0 : 13-November-2025 : Updated email logic to Admin → Sales Rep
+ *
+ * @version 1.0 : 12-November-2025 : Initial build created by JJ0413
  *
 *************************************************************************************************/
 
