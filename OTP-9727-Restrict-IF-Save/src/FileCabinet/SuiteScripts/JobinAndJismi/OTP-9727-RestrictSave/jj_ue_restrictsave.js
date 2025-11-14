@@ -11,9 +11,9 @@
  *
  * Author: Jobin and Jismi IT Services
  *
- * Date Created : 1-November-2025
+ * Date Created : 30-October-2025
  *
- * Description : Prevents item fulfillment creation if customer deposit is less than the sales order total.
+ * Description : Stops item fulfillment creation if customer deposit is less than the sales order total.
  *
  * REVISION HISTORY
  *
