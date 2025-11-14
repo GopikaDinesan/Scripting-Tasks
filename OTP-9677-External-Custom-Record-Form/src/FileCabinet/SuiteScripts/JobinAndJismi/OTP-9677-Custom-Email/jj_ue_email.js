@@ -4,28 +4,43 @@
  */
 /************************************************************************************************
  *  
- * OTP-9607 : External Custom Record form and actions
+ * OTP-9677 : External Custom Record form and actions
  *
 *************************************************************************************************
  *
  * Author: Jobin and Jismi IT Services
  *
- * Date Created : 30-October-2025
+ * Date Created : 29-October-2025
  *
  * Description : UserEvent script prevents duplicate inquiries, links customers, and sends notifications.
  *
  * REVISION HISTORY
  *
- * @version 1.0 : 28-October-2025 :  The initial build was created by JJ0413
+ * @version 1.0 : 29-October-2025 :  The initial build was created by JJ0413
  *
 *************************************************************************************************/
 
 define(['N/record', 'N/search', 'N/email', 'N/log'], function(record, search, email, log) {
-  const ADMIN_ID = -5; // static Admin recipient
-  const ADMIN_AUTHOR_ID = -5; // static Admin author
+  /**
+   * Static Admin recipient ID (-5 represents the system administrator).
+   * @constant {number}
+   */
+  const ADMIN_ID = -5;
+
+  /**
+   * Author ID for emails (Admin is also the author).
+   * @constant {number}
+   */
+  const ADMIN_AUTHOR_ID = -5;
 
   /**
    * Sends an email notification to the system administrator.
+   *
+   * @param {string} name - Customer name from the inquiry.
+   * @param {string} emailAddr - Customer email address.
+   * @param {string} subject - Subject of the inquiry.
+   * @param {string} message - Message body of the inquiry.
+   * @returns {void}
    */
   function notifyAdmin(name, emailAddr, subject, message) {
     try {
@@ -46,6 +61,13 @@ define(['N/record', 'N/search', 'N/email', 'N/log'], function(record, search, em
 
   /**
    * Sends an email notification to the assigned sales representative.
+   *
+   * @param {number|string} salesRepId - Internal ID of the assigned Sales Rep.
+   * @param {string} name - Customer name from the inquiry.
+   * @param {string} emailAddr - Customer email address.
+   * @param {string} subject - Subject of the inquiry.
+   * @param {string} message - Message body of the inquiry.
+   * @returns {void}
    */
   function notifySalesRep(salesRepId, name, emailAddr, subject, message) {
     try {
@@ -67,6 +89,12 @@ define(['N/record', 'N/search', 'N/email', 'N/log'], function(record, search, em
 
   /**
    * Executes after a new inquiry record is submitted.
+   *
+   * @param {Object} context - The User Event script context.
+   * @param {Record} context.newRecord - The newly created record.
+   * @param {Record} context.oldRecord - The old record (not used here).
+   * @param {string} context.type - The trigger type (CREATE, EDIT, DELETE).
+   * @returns {void}
    */
   function afterSubmit(context) {
     try {
