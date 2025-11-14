@@ -17,7 +17,7 @@
  *
  * REVISION HISTORY
  *
- * @version 1.0 : 11-November-2025 : Initial build created by JJ0416
+ * @version 1.0 : 11-November-2025 : Initial build created by JJ0413
  *
 *************************************************************************************************/
  
@@ -104,8 +104,8 @@ define(['N/record', 'N/runtime', 'N/search'], function(record, runtime, search) 
  
       return accumulatedDeposit;
  
-    } catch (error) {
-      return 0;
+        } catch (error) {
+          return 0;
     }
   };
  
