@@ -18,8 +18,9 @@
  *
  * REVISION HISTORY
  *
- * @version 1.0 : 11-November-2025 : Initial build created by JJ0416
- * @version 1.1 : 17-November-2025 : Naming/indentation fixes, added try/catch in all functions
+ * @version 1.0 : 11-November-2025 : Initial build created by JJ0413
+ * @version 1.1 : 15-November-2025 : Naming/indentation fixes, added try/catch in all functions
+ * @version 1.2 : 17-November-2025 : Final formatting and naming convention fixes by JJ0413
  *
  ************************************************************************************************/
 
@@ -45,8 +46,8 @@ define(['N/log', 'N/search', 'N/ui/serverWidget'], (log, search, serverWidget) =
 
       response.writePage(salesOrderForm);
     } catch (e) {
-      log.error({ title: 'Suitelet Error', details: e });
-      scriptContext.response.write('An unexpected error occurred. Please contact your administrator.');
+         log.error({ title: 'Suitelet Error', details: e });
+         scriptContext.response.write('An unexpected error occurred. Please contact your administrator.');
     }
   };
 
@@ -91,9 +92,9 @@ define(['N/log', 'N/search', 'N/ui/serverWidget'], (log, search, serverWidget) =
       });
 
       return form;
-    } catch (e) {
-      log.error({ title: 'createFormWithFilters Error', details: e });
-      throw e;
+    }    catch (e) {
+         log.error({ title: 'createFormWithFilters Error', details: e });
+         throw e;
     }
   }
 
@@ -121,9 +122,9 @@ define(['N/log', 'N/search', 'N/ui/serverWidget'], (log, search, serverWidget) =
           }
         }
       });
-    } catch (e) {
-      log.error({ title: 'applyDefaultFilterValues Error', details: e });
-      throw e;
+    }    catch (e) {
+         log.error({ title: 'applyDefaultFilterValues Error', details: e });
+         throw e;
     }
   }
 
@@ -134,7 +135,7 @@ define(['N/log', 'N/search', 'N/ui/serverWidget'], (log, search, serverWidget) =
    */
   function buildSalesOrderSublist(form) {
     try {
-      const sublist = form.addSublist({
+      const salesOrderSublist = form.addSublist({
         id: 'custpage_jj_salesorder_sublist',
         type: serverWidget.SublistType.LIST,
         label: 'Sales Orders'
@@ -154,11 +155,11 @@ define(['N/log', 'N/search', 'N/ui/serverWidget'], (log, search, serverWidget) =
         { id: 'custpage_jj_so_total', type: serverWidget.FieldType.CURRENCY, label: 'Total' }
       ];
 
-      sublistFields.forEach(field => sublist.addField(field));
-      return sublist;
-    } catch (e) {
-      log.error({ title: 'buildSalesOrderSublist Error', details: e });
-      throw e;
+      sublistFields.forEach(field => salesOrderSublist.addField(field));
+      return salesOrderSublist;
+    }    catch (e) {
+         log.error({ title: 'buildSalesOrderSublist Error', details: e });
+         throw e;
     }
   }
 
@@ -189,9 +190,9 @@ define(['N/log', 'N/search', 'N/ui/serverWidget'], (log, search, serverWidget) =
       }
 
       return filters;
-    } catch (e) {
-      log.error({ title: 'buildSearchFilters Error', details: e });
-      throw e;
+    }    catch (e) {
+         log.error({ title: 'buildSearchFilters Error', details: e });
+         throw e;
     }
   }
 
@@ -217,12 +218,13 @@ define(['N/log', 'N/search', 'N/ui/serverWidget'], (log, search, serverWidget) =
         return true;
       });
       return searchResults;
-    } catch (e) {
-      log.error({ title: 'runSalesOrderSearch Error', details: e });
-      throw e;
+    }    catch (e) {
+         log.error({ title: 'runSalesOrderSearch Error', details: e });
+         throw e;
     }
   }
-/**
+
+ /**
  * Populates the sublist with search results.
  * @param {serverWidget.Sublist} salesOrderSublist - Sublist object.
  * @param {Array} searchResults - Search results.
@@ -243,9 +245,9 @@ function populateSublistWithResults(salesOrderSublist, searchResults) {
       safeSet(salesOrderSublist, { id: 'custpage_jj_so_tax', line, value: result.getValue('taxamount') });
       safeSet(salesOrderSublist, { id: 'custpage_jj_so_total', line, value: result.getValue('amount') });
     });
-  } catch (e) {
-    log.error({ title: 'populateSublistWithResults Error', details: e });
-    throw e;
+  }    catch (e) {
+       log.error({ title: 'populateSublistWithResults Error', details: e });
+       throw e;
   }
 }
 
@@ -260,15 +262,15 @@ function populateSublistWithResults(salesOrderSublist, searchResults) {
  */
 function safeSet(sublist, { id, line, value }) {
   try {
-    const normalizedValue = value ?? '';
+    let normalizedValue = value ?? '';
     if (normalizedValue instanceof Date) {
       normalizedValue = normalizedValue.toISOString().split('T')[0];
     } else {
       normalizedValue = String(normalizedValue);
     }
     sublist.setSublistValue({ id, line, value: normalizedValue });
-  } catch (err) {
-    log.error({ title: 'safeSet failed', details: { id, line, error: err } });
+  }    catch (err) {
+       log.error({ title: 'safeSet failed', details: { id, line, error: err } });
   }
 }
 
