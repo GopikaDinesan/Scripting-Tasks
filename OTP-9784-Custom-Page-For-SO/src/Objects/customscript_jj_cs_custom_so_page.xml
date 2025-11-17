@@ -1,0 +1,10 @@
+<clientscript scriptid="customscript_jj_cs_custom_so_page">
+  <description></description>
+  <isinactive>F</isinactive>
+  <name>JJ CS CUSTOM SO PAGE</name>
+  <notifyadmins>F</notifyadmins>
+  <notifyemails></notifyemails>
+  <notifyowner>T</notifyowner>
+  <notifyuser>F</notifyuser>
+  <scriptfile>[/SuiteScripts/JobinAndJismi/OTP-9784-CustomSOpage/jj_cs_custompage.js]</scriptfile>
+</clientscript>
