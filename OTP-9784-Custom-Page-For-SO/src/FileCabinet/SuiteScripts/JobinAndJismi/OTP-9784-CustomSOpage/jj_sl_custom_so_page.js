@@ -19,16 +19,11 @@
  * REVISION HISTORY
  *
  * @version 1.0 : 11-November-2025 : Initial build created by JJ0416
+ * @version 1.1 : 17-November-2025 : Naming/indentation fixes, added try/catch in all functions
  *
  ************************************************************************************************/
 
 define(['N/log', 'N/search', 'N/ui/serverWidget'], (log, search, serverWidget) => {
-
-  /**
-   * @constant {string} CLIENT_SCRIPT_PATH
-   * Path to the client script that handles filter changes.
-   */
-  const CLIENT_SCRIPT_PATH = 'SuiteScripts/JobinAndJismi/OTP-9784-CustomSOpage/jj_ue_custom_so_page.js';
 
   /**
    * Entry point for Suitelet execution.
@@ -39,16 +34,16 @@ define(['N/log', 'N/search', 'N/ui/serverWidget'], (log, search, serverWidget) =
     try {
       const { request, response } = scriptContext;
 
-      const form = createFormWithFilters();
-      applyDefaultFilterValues(form, request.parameters);
+      const salesOrderForm = createFormWithFilters();
+      applyDefaultFilterValues(salesOrderForm, request.parameters);
 
-      const sublist = buildSalesOrderSublist(form);
-      const filters = buildSearchFilters(request.parameters);
-      const results = runSalesOrderSearch(filters);
+      const salesOrderSublist = buildSalesOrderSublist(salesOrderForm);
+      const searchFilters = buildSearchFilters(request.parameters);
+      const searchResults = runSalesOrderSearch(searchFilters);
 
-      populateSublistWithResults(sublist, results);
+      populateSublistWithResults(salesOrderSublist, searchResults);
 
-      response.writePage(form);
+      response.writePage(salesOrderForm);
     } catch (e) {
       log.error({ title: 'Suitelet Error', details: e });
       scriptContext.response.write('An unexpected error occurred. Please contact your administrator.');
@@ -62,7 +57,7 @@ define(['N/log', 'N/search', 'N/ui/serverWidget'], (log, search, serverWidget) =
   function createFormWithFilters() {
     try {
       const form = serverWidget.createForm({ title: 'Sales Orders by Status' });
-      form.clientScriptModulePath = CLIENT_SCRIPT_PATH;
+      form.clientScriptModulePath = 'SuiteScripts/JobinAndJismi/OTP-9784-CustomSOpage/jj_ue_custom_so_page.js';
 
       const statusField = form.addField({
         id: 'custpage_jj_status_filter',
@@ -110,12 +105,19 @@ define(['N/log', 'N/search', 'N/ui/serverWidget'], (log, search, serverWidget) =
    */
   function applyDefaultFilterValues(form, params) {
     try {
-      ['custpage_jj_status_filter', 'custpage_jj_customer_filter', 'custpage_jj_subsidiary_filter', 'custpage_jj_department_filter'].forEach(id => {
+      const filterIds = [
+        'custpage_jj_status_filter',
+        'custpage_jj_customer_filter',
+        'custpage_jj_subsidiary_filter',
+        'custpage_jj_department_filter'
+      ];
+
+      filterIds.forEach(id => {
         if (params[id]) {
           try {
             form.getField({ id }).defaultValue = params[id];
-          } catch (e) {
-            log.debug({ title: `Default value set failed for ${id}`, details: e });
+          } catch (innerErr) {
+            log.debug({ title: `Default value set failed for ${id}`, details: innerErr });
           }
         }
       });
@@ -138,7 +140,7 @@ define(['N/log', 'N/search', 'N/ui/serverWidget'], (log, search, serverWidget) =
         label: 'Sales Orders'
       });
 
-      const fields = [
+      const sublistFields = [
         { id: 'custpage_jj_so_internalid', type: serverWidget.FieldType.TEXT, label: 'Internal ID' },
         { id: 'custpage_jj_so_tranid', type: serverWidget.FieldType.TEXT, label: 'Document Name' },
         { id: 'custpage_jj_so_date', type: serverWidget.FieldType.DATE, label: 'Date' },
@@ -152,7 +154,7 @@ define(['N/log', 'N/search', 'N/ui/serverWidget'], (log, search, serverWidget) =
         { id: 'custpage_jj_so_total', type: serverWidget.FieldType.CURRENCY, label: 'Total' }
       ];
 
-      fields.forEach(field => sublist.addField(field));
+      sublistFields.forEach(field => sublist.addField(field));
       return sublist;
     } catch (e) {
       log.error({ title: 'buildSalesOrderSublist Error', details: e });
@@ -195,81 +197,80 @@ define(['N/log', 'N/search', 'N/ui/serverWidget'], (log, search, serverWidget) =
 
   /**
    * Executes the Sales Order search.
-   * @param {Array} filters - Search filters.
+   * @param {Array} searchFilters - Search filters.
    * @returns {Array} Search results.
    */
-  function runSalesOrderSearch(filters) {
+  function runSalesOrderSearch(searchFilters) {
     try {
-      const soSearch = search.create({
+      const salesOrderSearchObj = search.create({
         type: search.Type.SALES_ORDER,
-        filters,
+        filters: searchFilters,
         columns: [
           'internalid', 'tranid', 'trandate', 'statusref', 'entity',
           'subsidiary', 'department', 'class', 'grossamount', 'taxamount', 'amount'
         ]
       });
 
-      const results = [];
-      soSearch.run().each(result => {
-        results.push(result);
+      const searchResults = [];
+      salesOrderSearchObj.run().each(result => {
+        searchResults.push(result);
         return true;
       });
-      return results;
+      return searchResults;
     } catch (e) {
       log.error({ title: 'runSalesOrderSearch Error', details: e });
       throw e;
     }
   }
-
-    /**
-   * Populates the sublist with search results.
-   * @param {serverWidget.Sublist} sublist - Sublist object.
-   * @param {Array} results - Search results.
-   * @returns {void}
-   */
-  function populateSublistWithResults(sublist, results) {
-    try {
-      results.forEach((result, line) => {
-        safeSet(sublist, { id: 'custpage_jj_so_internalid', line, value: result.getValue('internalid') });
-        safeSet(sublist, { id: 'custpage_jj_so_tranid', line, value: result.getValue('tranid') });
-        safeSet(sublist, { id: 'custpage_jj_so_date', line, value: result.getValue('trandate') });
-        safeSet(sublist, { id: 'custpage_jj_so_status', line, value: result.getText('statusref') });
-        safeSet(sublist, { id: 'custpage_jj_so_customer', line, value: result.getText('entity') });
-        safeSet(sublist, { id: 'custpage_jj_so_subsidiary', line, value: result.getText('subsidiary') });
-        safeSet(sublist, { id: 'custpage_jj_so_department', line, value: result.getText('department') });
-        safeSet(sublist, { id: 'custpage_jj_so_class', line, value: result.getText('class') });
-        safeSet(sublist, { id: 'custpage_jj_so_subtotal', line, value: result.getValue('grossamount') });
-        safeSet(sublist, { id: 'custpage_jj_so_tax', line, value: result.getValue('taxamount') });
-        safeSet(sublist, { id: 'custpage_jj_so_total', line, value: result.getValue('amount') });
-      });
-    } catch (e) {
-      log.error({ title: 'populateSublistWithResults Error', details: e });
-      throw e;
-    }
+/**
+ * Populates the sublist with search results.
+ * @param {serverWidget.Sublist} salesOrderSublist - Sublist object.
+ * @param {Array} searchResults - Search results.
+ * @returns {void}
+ */
+function populateSublistWithResults(salesOrderSublist, searchResults) {
+  try {
+    searchResults.forEach((result, line) => {
+      safeSet(salesOrderSublist, { id: 'custpage_jj_so_internalid', line, value: result.getValue('internalid') });
+      safeSet(salesOrderSublist, { id: 'custpage_jj_so_tranid', line, value: result.getValue('tranid') });
+      safeSet(salesOrderSublist, { id: 'custpage_jj_so_date', line, value: result.getValue('trandate') });
+      safeSet(salesOrderSublist, { id: 'custpage_jj_so_status', line, value: result.getText('statusref') });
+      safeSet(salesOrderSublist, { id: 'custpage_jj_so_customer', line, value: result.getText('entity') });
+      safeSet(salesOrderSublist, { id: 'custpage_jj_so_subsidiary', line, value: result.getText('subsidiary') });
+      safeSet(salesOrderSublist, { id: 'custpage_jj_so_department', line, value: result.getText('department') });
+      safeSet(salesOrderSublist, { id: 'custpage_jj_so_class', line, value: result.getText('class') });
+      safeSet(salesOrderSublist, { id: 'custpage_jj_so_subtotal', line, value: result.getValue('grossamount') });
+      safeSet(salesOrderSublist, { id: 'custpage_jj_so_tax', line, value: result.getValue('taxamount') });
+      safeSet(salesOrderSublist, { id: 'custpage_jj_so_total', line, value: result.getValue('amount') });
+    });
+  } catch (e) {
+    log.error({ title: 'populateSublistWithResults Error', details: e });
+    throw e;
   }
+}
 
-  /**
-   * Safely sets a sublist value with normalization and error handling.
-   * @param {serverWidget.Sublist} sublist - Target sublist.
-   * @param {Object} options - Options for setting value.
-   * @param {string} options.id - Field id.
-   * @param {number} options.line - Line index.
-   * @param {string|number|Date|null} options.value - Value to set.
-   * @returns {void}
-   */
-  function safeSet(sublist, { id, line, value }) {
-    try {
-      let val = value ?? '';
-      if (val instanceof Date) {
-        val = val.toISOString().split('T')[0];
-      } else {
-        val = String(val);
-      }
-      sublist.setSublistValue({ id, line, value: val });
-    } catch (err) {
-      log.error({ title: 'safeSet failed', details: { id, line, error: err } });
+/**
+ * Safely sets a sublist value with normalization and error handling.
+ * @param {serverWidget.Sublist} sublist - Target sublist.
+ * @param {Object} options - Options for setting value.
+ * @param {string} options.id - Field id.
+ * @param {number} options.line - Line index.
+ * @param {string|number|Date|null} options.value - Value to set.
+ * @returns {void}
+ */
+function safeSet(sublist, { id, line, value }) {
+  try {
+    const normalizedValue = value ?? '';
+    if (normalizedValue instanceof Date) {
+      normalizedValue = normalizedValue.toISOString().split('T')[0];
+    } else {
+      normalizedValue = String(normalizedValue);
     }
+    sublist.setSublistValue({ id, line, value: normalizedValue });
+  } catch (err) {
+    log.error({ title: 'safeSet failed', details: { id, line, error: err } });
   }
+}
 
-  return { onRequest };
+return { onRequest };
 });
